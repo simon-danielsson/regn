@@ -11,10 +11,14 @@ use crossterm::{
 };
 use rand::{RngExt, rng};
 
+mod api;
 mod controls;
 mod utils;
 
-use crate::utils::get_fps;
+use crate::{
+    api::{API, CurrentWeather},
+    utils::get_fps,
+};
 
 const FPS: f64 = 60.0;
 const RAIN_ANIM_FPS_DIV: i32 = 4;
@@ -22,7 +26,9 @@ const SNOW_ANIM_FPS_DIV: i32 = 13;
 
 fn main() -> io::Result<()> {
     let sout = stdout();
-    let mut r = Regn::new(sout);
+    let weather = api::api_main();
+
+    let mut r = Regn::new(sout, weather);
 
     r.util_setup()?;
 
@@ -61,36 +67,28 @@ enum ProgState {
     Quit,
 }
 
-#[derive(PartialEq)]
-enum CurrentWeather {
-    Rain,
-    Snow,
-}
-
 struct Regn {
     columns: u16,
     rows: u16,
     sout: Stdout,
-    current_weather: CurrentWeather,
+    weather: API,
     prog_state: ProgState,
     fps: Duration,
     anim_frame_counter: i32,
-    api_key: String,
     // rain_animation
     weather_particles: Vec<WeatherParticle>,
 }
 
 impl Regn {
-    fn new(sout: Stdout) -> Self {
+    fn new(sout: Stdout, weather: API) -> Self {
         Self {
             sout,
             columns: 0,
             rows: 0,
-            current_weather: CurrentWeather::Rain,
+            weather,
             prog_state: ProgState::Main,
             fps: get_fps(FPS),
             anim_frame_counter: 0,
-            api_key: String::new(),
             // rain_animation
             weather_particles: Vec::new(),
         }
@@ -103,13 +101,8 @@ impl Regn {
 
         let drop_chars: Vec<&str> = vec!["*", "o", "."];
 
-        let drop_colors: Vec<Color> = vec![
-            Color::DarkGrey,
-            Color::Grey,
-            Color::Reset,
-            Color::Black,
-            Color::White,
-        ];
+        let drop_colors: Vec<Color> =
+        vec![Color::DarkGrey, Color::Grey, Color::Reset, Color::White];
 
         // generate droplets
         if self.weather_particles.len() < max_amt_of_droplets {
@@ -164,13 +157,8 @@ impl Regn {
         let max_amt_of_droplets: usize = self.columns as usize;
 
         let drop_chars: Vec<&str> = vec!["/", "."];
-        let drop_colors: Vec<Color> = vec![
-            Color::DarkGrey,
-            Color::Grey,
-            Color::Reset,
-            Color::Black,
-            Color::White,
-        ];
+        let drop_colors: Vec<Color> =
+        vec![Color::DarkGrey, Color::Grey, Color::Reset, Color::White];
 
         let mut rng = rng();
 
@@ -221,17 +209,21 @@ impl Regn {
         Ok(())
     }
 
+    /// todo
     fn cloud_animation(&mut self) -> io::Result<()> {
+        self.util_clear_screen()?;
         Ok(())
     }
 
+    /// todo
     fn sun_animation(&mut self) -> io::Result<()> {
+        self.util_clear_screen()?;
         Ok(())
     }
 
     fn main_loop(&mut self) -> io::Result<()> {
         // weather animation
-        match self.current_weather {
+        match self.weather.current {
             CurrentWeather::Rain => {
                 if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
                     self.anim_frame_counter = 0;
@@ -240,6 +232,7 @@ impl Regn {
                     self.anim_frame_counter += 1;
                 }
             }
+
             CurrentWeather::Snow => {
                 if self.anim_frame_counter >= SNOW_ANIM_FPS_DIV {
                     self.anim_frame_counter = 0;
@@ -248,6 +241,17 @@ impl Regn {
                     self.anim_frame_counter += 1;
                 }
             }
+
+            CurrentWeather::Sun => {
+                self.sun_animation()?;
+            }
+
+            CurrentWeather::Cloud => {
+                self.cloud_animation()?;
+            }
+
+            // add animations for thunder, clear and fog
+            _ => todo!(),
         }
         Ok(())
     }

@@ -19,19 +19,20 @@ impl Regn {
                             }
 
                             (KeyCode::Char('t'), _) => {
-                                if self.current_weather
+                                if self.weather.current
                                 == CurrentWeather::Rain
                                 {
                                     self.weather_particles
                                         .clear();
                                     self.util_clear_screen()?;
-                                    self.current_weather =
-                                        CurrentWeather::Snow;
+                                    self.weather
+                                        .current = CurrentWeather::Snow;
                                 } else {
                                     self.weather_particles
                                         .clear();
                                     self.util_clear_screen()?;
-                                    self.current_weather = CurrentWeather::Rain;
+                                    self.weather
+                                        .current = CurrentWeather::Rain;
                                 }
                             }
 
