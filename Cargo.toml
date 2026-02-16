@@ -7,6 +7,7 @@ repository = "https://github.com/simon-danielsson/regn"
 authors = ["Simon Danielsson <contact@simondanielsson.se>"]
 keywords = ["tui", "weather", "terminal", "cli"]
 homepage = "https://www.simondanielsson.se"
+license = "MIT"
 rust-version = "1.88.0"
 
 [dependencies]
