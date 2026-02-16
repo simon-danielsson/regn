@@ -17,6 +17,7 @@
   <a href="#info">Info</a> •
   <a href="#install">Install</a> •
   <a href="#usage">Usage</a> •
+  <a href="#builtwith">Built with</a> •
   <a href="#license">License</a>
 </p>  
    
@@ -30,7 +31,7 @@
 
 ## 📌 Information
   
-Regn is a minimal weather forecast utility for the terminal. Built using [crossterm](https://github.com/crossterm-rs/crossterm)
+Regn is a minimal weather forecast utility for the terminal.  
   
 ---
 <div id="install"></div>
@@ -70,3 +71,10 @@ Controls
 
 ## 📜 License
 This project is licensed under the [MIT License](https://github.com/simon-danielsson/regn/blob/main/LICENSE).  
+  
+---
+<div id="builtwith"></div>
+
+## 🛠 Built with
+  
+- [crossterm](https://github.com/crossterm-rs/crossterm)
