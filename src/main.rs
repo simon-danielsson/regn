@@ -25,11 +25,10 @@ const RAIN_ANIM_FPS_DIV: i32 = 4;
 const SNOW_ANIM_FPS_DIV: i32 = 13;
 
 fn main() -> io::Result<()> {
+    let weather = api::api_main("Stockholm".to_string());
+
     let sout = stdout();
-    let weather = api::api_main();
-
     let mut r = Regn::new(sout, weather);
-
     r.util_setup()?;
 
     while r.prog_state != ProgState::Quit {
