@@ -76,6 +76,7 @@ struct Regn {
     prog_state: ProgState,
     fps: Duration,
     anim_frame_counter: i32,
+    api_key: String,
     // rain_animation
     weather_particles: Vec<WeatherParticle>,
 }
@@ -90,6 +91,7 @@ impl Regn {
             prog_state: ProgState::Main,
             fps: get_fps(FPS),
             anim_frame_counter: 0,
+            api_key: String::new(),
             // rain_animation
             weather_particles: Vec::new(),
         }
@@ -248,7 +250,6 @@ impl Regn {
                 }
             }
         }
-        // self.util_clear_screen()?;
         Ok(())
     }
 
@@ -257,7 +258,31 @@ impl Regn {
         Ok(())
     }
 
+    /// accuweather api key
+    fn load_api_key(&mut self) -> io::Result<String> {
+        std::fs::read_to_string("src/key.txt")
+    }
+
     fn util_setup(&mut self) -> io::Result<()> {
+        // load api key and quit if it's not there
+        match self.load_api_key() {
+            Ok(key) => {
+                let k: String = key.trim().to_string();
+                if k.is_empty() {
+                    panic!(
+                    "ERROR: No API key was supplied in \"key.txt\". Please add your accuweather key."
+                )
+                } else {
+                    self.api_key = k;
+                }
+            }
+            _ => {
+                panic!(
+                "ERROR: \"key.txt\" does not exist in src directory. Create this file and add your accuweather API key inside it."
+            )
+            }
+        };
+
         enable_raw_mode()?;
         (self.columns, self.rows) = terminal::size()?;
         self.sout.execute(EnterAlternateScreen)?;
