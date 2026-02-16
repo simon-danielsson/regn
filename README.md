@@ -48,9 +48,9 @@ cargo install regn
 ## 💻 Usage
     
 > [!IMPORTANT]  
-> **AccuWeather API**  
-> Regn uses the [AccuWeather](https://developer.accuweather.com/home) API to get weather information. To use this application, you must supply your own API key. Details on how to generate a key can be found on AccuWeathers developer page linked here.
-> Once your key has been generated you add it to a new file in your home ($HOME) directory: `~/.regn`
+> **WeatherAPI**  
+> Regn queries [WeatherAPI](https://www.weatherapi.com/) to get its weather information. To use this application, you must supply your own API key. Details on how to generate a key can be found on WeatherAPIs developer page linked previously.
+> If/when you have a key, add it to a new file in your home ($HOME) directory: `~/.regn`
 
   
 ``` terminal
