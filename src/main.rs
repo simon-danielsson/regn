@@ -5,17 +5,16 @@ use std::{
 };
 
 use crossterm::{
-    ExecutableCommand, QueueableCommand,
-    cursor::{self, MoveTo},
+    QueueableCommand,
+    cursor::MoveTo,
     style::{Color, SetForegroundColor},
-    terminal::{
-        self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen,
-        disable_raw_mode, enable_raw_mode,
-    },
 };
 use rand::{RngExt, rng};
 
 mod controls;
+mod utils;
+
+use crate::utils::get_fps;
 
 const FPS: f64 = 60.0;
 const RAIN_ANIM_FPS_DIV: i32 = 4;
@@ -252,54 +251,4 @@ impl Regn {
         }
         Ok(())
     }
-
-    fn util_clear_screen(&mut self) -> io::Result<()> {
-        self.sout.queue(Clear(ClearType::All))?;
-        Ok(())
-    }
-
-    /// accuweather api key
-    fn load_api_key(&mut self) -> io::Result<String> {
-        std::fs::read_to_string("src/key.txt")
-    }
-
-    fn util_setup(&mut self) -> io::Result<()> {
-        // load api key and quit if it's not there
-        match self.load_api_key() {
-            Ok(key) => {
-                let k: String = key.trim().to_string();
-                if k.is_empty() {
-                    panic!(
-                    "ERROR: No API key was supplied in \"key.txt\". Please add your accuweather key."
-                )
-                } else {
-                    self.api_key = k;
-                }
-            }
-            _ => {
-                panic!(
-                "ERROR: \"key.txt\" does not exist in src directory. Create this file and add your accuweather API key inside it."
-            )
-            }
-        };
-
-        enable_raw_mode()?;
-        (self.columns, self.rows) = terminal::size()?;
-        self.sout.execute(EnterAlternateScreen)?;
-        self.sout.queue(cursor::SavePosition)?;
-        self.sout.queue(cursor::Hide)?;
-        Ok(())
-    }
-
-    pub fn util_quit(&mut self) -> io::Result<()> {
-        disable_raw_mode()?;
-        self.sout.execute(LeaveAlternateScreen)?;
-        self.sout.queue(cursor::RestorePosition)?;
-        self.sout.queue(cursor::Show)?;
-        Ok(())
-    }
-}
-
-pub fn get_fps(fps: f64) -> Duration {
-    Duration::from_secs_f64(1.0 / fps)
 }
