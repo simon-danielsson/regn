@@ -46,10 +46,14 @@ pub struct RespCondition {
 }
 
 #[tokio::main]
-pub async fn api_request(local_key: String, location: String) -> Result<WeatherResponse, Error> {
+pub async fn api_request(
+    local_key: String,
+    location: String,
+    forecast: &i32,
+) -> Result<WeatherResponse, Error> {
     let url = format!(
-        "http://api.weatherapi.com/v1/forecast.json?key={}&q={}&days=3&aqi=no&alerts=no",
-        local_key, location
+        "http://api.weatherapi.com/v1/forecast.json?key={}&q={}&days={}&aqi=no&alerts=no",
+        local_key, location, forecast
     );
     let r = reqwest::get(&url).await?.json::<WeatherResponse>().await?;
     Ok(r)

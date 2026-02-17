@@ -2,8 +2,12 @@ Subcommands
 help : print help
 
 Flags
--l <str> : choose city location (default: Stockholm)
+-l <str> : choose city location (default: Stockholm. Cities with spaces must be enclosed with double quotes; refer to the example down below!)
 -t : view result directly in stdout instead of a TUI
+-f <int> : set number of days to forecast (max: 10. default: 5. If a number is missing the default is used, if a number is larger than max the max value will be used.)
+
+Example usage:
+regn -l "rio de janeiro" -f 8
 
 Controls
 [Esc] : quit

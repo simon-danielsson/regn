@@ -22,14 +22,12 @@ impl Regn {
                                 if self.weather.current_condition
                                 == CurrentCondition::Rain
                                 {
-                                    self.weather_particles
-                                        .clear();
+                                    self.precipitation.clear();
                                     self.util_clear_screen()?;
                                     self.weather
                                         .current_condition = CurrentCondition::Snow;
                                 } else {
-                                    self.weather_particles
-                                        .clear();
+                                    self.precipitation.clear();
                                     self.util_clear_screen()?;
                                     self.weather
                                         .current_condition = CurrentCondition::Rain;

@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
     let args: Arguments = parse_args();
 
     // fetch weather data from API
-    let weather: WeatherAPI = api::api_main::api_main(&args.location);
+    let weather: WeatherAPI = api::api_main::api_main(&args.location, &args.forecast);
 
     let sout = stdout();
     let mut r = Regn::new(sout, weather, args);
@@ -74,7 +74,7 @@ impl Pos {
     }
 }
 
-struct WeatherParticle {
+struct Precipitation {
     pos: Pos,
     color: Color,
     char: String,
@@ -95,8 +95,8 @@ struct Regn {
     fps: Duration,
     args: Arguments,
     anim_frame_counter: i32,
-    // rain_animation
-    weather_particles: Vec<WeatherParticle>,
+    // rain and snow vector
+    precipitation: Vec<Precipitation>,
 }
 
 impl Regn {
@@ -111,7 +111,7 @@ impl Regn {
             fps: get_fps(FPS),
             anim_frame_counter: 0,
             // rain_animation
-            weather_particles: Vec::new(),
+            precipitation: Vec::new(),
         }
     }
 
@@ -126,14 +126,14 @@ impl Regn {
         println!("Current temp: {}°C", self.weather.current_temp_c);
         println!("Condition: {}", self.weather.current_condition_as_str);
 
-        println!("\n3-Day Forecast:");
+        println!("\n{}-Day Forecast:", self.weather.forecast_days.len());
         for day in self.weather.forecast_days.iter() {
             println!(
                 "{} → {}°C / {}°C ({})",
                 day.date,
                 day.day.maxtemp_c,
                 day.day.mintemp_c,
-                day.day.condition.text
+                day.day.condition.text.trim()
             );
         }
         Ok(())
@@ -150,12 +150,12 @@ impl Regn {
         vec![Color::DarkGrey, Color::Grey, Color::Reset, Color::White];
 
         // generate droplets
-        if self.weather_particles.len() < max_amt_of_droplets {
+        if self.precipitation.len() < max_amt_of_droplets {
             for _ in 0..=droplets_to_gen_each_frame.max(0) {
                 let rand_column = rng.random_range(..self.columns);
                 let rand_color = rng.random_range(..drop_colors.len());
                 let rand_char = rng.random_range(..drop_chars.len());
-                self.weather_particles.push(WeatherParticle {
+                self.precipitation.push(Precipitation {
                     pos: Pos::new(rand_column, 0),
                     color: drop_colors[rand_color],
                     char: drop_chars[rand_char].to_string(),
@@ -163,7 +163,7 @@ impl Regn {
             }
         }
 
-        for drop in self.weather_particles.iter_mut() {
+        for drop in self.precipitation.iter_mut() {
             // erase old position
             self.sout.queue(MoveTo(drop.pos.col, drop.pos.row))?;
             self.sout.write_all(b" ")?;
@@ -191,7 +191,7 @@ impl Regn {
         }
 
         // remove out-of-frame particles
-        self.weather_particles
+        self.precipitation
             .retain(|d| d.pos.col < self.columns && d.pos.row < self.rows);
 
         Ok(())
@@ -208,12 +208,12 @@ impl Regn {
         let mut rng = rng();
 
         // generate droplets
-        if self.weather_particles.len() < max_amt_of_droplets {
+        if self.precipitation.len() < max_amt_of_droplets {
             for _ in 0..=droplets_to_gen_each_frame.max(0) {
                 let rand_column = rng.random_range(..self.columns);
                 let rand_color = rng.random_range(..drop_colors.len());
                 let rand_char = rng.random_range(..drop_chars.len());
-                self.weather_particles.push(WeatherParticle {
+                self.precipitation.push(Precipitation {
                     pos: Pos::new(rand_column, 0),
                     color: drop_colors[rand_color],
                     char: drop_chars[rand_char].to_string(),
@@ -226,7 +226,7 @@ impl Regn {
         let row_mv_each_frame: u16 = 1; // fall down
 
         // move + draw
-        for drop in self.weather_particles.iter_mut() {
+        for drop in self.precipitation.iter_mut() {
             // erase old position
             self.sout.queue(MoveTo(drop.pos.col, drop.pos.row))?;
             self.sout.write_all(b" ")?;
@@ -248,7 +248,7 @@ impl Regn {
         }
 
         // remove out-of-frame particles
-        self.weather_particles
+        self.precipitation
             .retain(|d| d.pos.col < self.columns && d.pos.row < self.rows);
 
         Ok(())

@@ -24,10 +24,10 @@ pub struct WeatherAPI {
 }
 
 /// this is what gets called from main.rs
-pub fn api_main(location: &String) -> WeatherAPI {
+pub fn api_main(location: &String, forecast: &i32) -> WeatherAPI {
     let local_key = api_get_local_key();
 
-    let r: WeatherResponse = api_request(local_key, location.to_string()).unwrap();
+    let r: WeatherResponse = api_request(local_key, location.to_string(), forecast).unwrap();
 
     return WeatherAPI {
         location: r.location,
