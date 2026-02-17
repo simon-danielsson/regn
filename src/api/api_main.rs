@@ -75,7 +75,7 @@ fn parse_current_weather(current: String) -> CurrentCondition {
     match cl {
         s if s.contains("sun") => return CurrentCondition::Sun,
         s if s.contains("cloud") => return CurrentCondition::Cloud,
-        s if s.contains("snow") => return CurrentCondition::Snow,
+        s if s.contains("snow") | s.contains("blizzard") => return CurrentCondition::Snow,
         s if s.contains("rain") | s.contains("pour") => return CurrentCondition::Rain,
         s if s.contains("clear") => return CurrentCondition::Clear,
         s if s.contains("mist") | s.contains("fog") | s.contains("overcast") => {

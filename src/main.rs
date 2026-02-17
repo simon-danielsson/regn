@@ -7,7 +7,7 @@ use std::{
 use crossterm::{
     QueueableCommand,
     cursor::MoveTo,
-    style::{Color, SetForegroundColor},
+    style::{Color, Print, SetForegroundColor},
 };
 use rand::{RngExt, rng};
 
@@ -63,6 +63,44 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
+#[derive(Clone)]
+struct WeatherFrame {
+    lines: Vec<String>,
+    pos: Pos,
+    height: u16,
+    width: u16,
+    border: Vec<char>,
+}
+impl WeatherFrame {
+    fn new() -> Self {
+        Self {
+            lines: Vec::new(),
+            pos: Pos::new_e(),
+            height: 0,
+            width: 0,
+            border: vec!['╭', '─', '╮', '│', '╯', '╰'],
+        }
+    }
+
+    fn find_optimal_width_and_height(&mut self) {
+        let account_for_borders_w = 8;
+        let account_for_borders_h = 4;
+        let mut lines_sort_by_len = self.lines.clone();
+
+        lines_sort_by_len.sort_by_key(|s| s.len());
+        let longest = lines_sort_by_len.last().unwrap().chars().count();
+
+        self.width = longest as u16 + account_for_borders_w;
+        self.height = self.lines.len() as u16 + account_for_borders_h;
+    }
+
+    fn make_centered(&mut self, vp_cols: u16, vp_rows: u16) {
+        let center_of_vp: (u16, u16) = (vp_cols / 2, vp_rows / 2);
+        self.pos.col = center_of_vp.0 - (self.width / 2);
+        self.pos.row = center_of_vp.1 - (self.height / 2);
+    }
+}
+
 #[derive(Clone, PartialEq)]
 struct Pos {
     col: u16,
@@ -71,6 +109,9 @@ struct Pos {
 impl Pos {
     fn new(col: u16, row: u16) -> Self {
         Self { col, row }
+    }
+    fn new_e() -> Self {
+        Self { col: 0, row: 0 }
     }
 }
 
@@ -116,28 +157,8 @@ impl Regn {
     }
 
     fn f_stdout_direct(&mut self) -> io::Result<()> {
-        println!(
-            "{city}, {country}\n{time}",
-            city = self.weather.location.name,
-            country = self.weather.location.country,
-            time = self.weather.location.localtime
-        );
-
-        println!(
-            "{temp}°C, {cond}",
-            temp = self.weather.current_temp_c,
-            cond = self.weather.current_condition_as_str
-        );
-
-        println!("\n{}-Day Forecast:", self.weather.forecast_days.len());
-        for day in self.weather.forecast_days.iter() {
-            println!(
-                "{} → {}°C / {}°C ({})",
-                day.date,
-                day.day.maxtemp_c,
-                day.day.mintemp_c,
-                day.day.condition.text.trim()
-            );
+        for line in self.format_weather_data() {
+            println!("{}", line);
         }
         Ok(())
     }
@@ -269,45 +290,167 @@ impl Regn {
         Ok(())
     }
 
-    fn main_loop(&mut self) -> io::Result<()> {
-        // weather animation
-        match self.weather.current_condition {
-            CurrentCondition::Rain => {
-                if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
-                    self.anim_frame_counter = 0;
-                    self.rain_animation()?;
-                } else {
-                    self.anim_frame_counter += 1;
-                }
-            }
+    fn format_weather_data(&mut self) -> Vec<String> {
+        let mut s = Vec::new();
 
-            CurrentCondition::Snow => {
-                if self.anim_frame_counter >= SNOW_ANIM_FPS_DIV {
-                    self.anim_frame_counter = 0;
-                    self.snow_animation()?;
-                } else {
-                    self.anim_frame_counter += 1;
-                }
-            }
+        s.push(format!("{time}", time = self.weather.location.localtime));
 
-            CurrentCondition::Sun => {
-                self.sun_animation()?;
-            }
+        s.push(format!(
+            "{city}, {country}",
+            city = self.weather.location.name,
+            country = self.weather.location.country,
+        ));
 
-            CurrentCondition::Cloud => {
-                self.cloud_animation()?;
-            }
+        s.push(format!(
+            "{temp}°C, {cond}",
+            temp = self.weather.current_temp_c,
+            cond = self.weather.current_condition_as_str
+        ));
 
-            // add animations for thunder, clear and fog
-            _ => {
-                if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
-                    self.anim_frame_counter = 0;
-                    self.rain_animation()?;
-                } else {
-                    self.anim_frame_counter += 1;
-                }
+        s.push(format!(
+            "\n{}-Day Forecast:",
+            self.weather.forecast_days.len()
+        ));
+
+        for day in self.weather.forecast_days.iter() {
+            s.push(format!(
+                "{}: {}°C / {}°C ({})",
+                day.date,
+                day.day.maxtemp_c,
+                day.day.mintemp_c,
+                day.day.condition.text.trim()
+            ));
+        }
+        s
+    }
+
+    fn weather_frame(&mut self) -> io::Result<()> {
+        let mut f = WeatherFrame::new();
+        for line in self.format_weather_data() {
+            f.lines.push(line);
+        }
+        f.find_optimal_width_and_height();
+        f.make_centered(self.columns, self.rows);
+        self.w_rect(&f)?;
+        self.w_text(f)?;
+        Ok(())
+    }
+
+    fn w_text(&mut self, f: WeatherFrame) -> io::Result<()> {
+        let init_pos: Pos = Pos {
+            col: f.pos.col + 4,
+            row: f.pos.row + 2,
+        };
+        for (i, line) in f.lines.iter().enumerate() {
+            self.sout
+                .queue(MoveTo(init_pos.col, init_pos.row + i as u16))?;
+            self.sout.write(line.as_bytes())?;
+        }
+
+        Ok(())
+    }
+
+    fn w_rect(&mut self, r: &WeatherFrame) -> io::Result<()> {
+        // if nothing
+        if r.width == 0 || r.height == 0 {
+            return Ok(());
+        }
+
+        let x0 = r.pos.col;
+        let y0 = r.pos.row;
+        let w = r.width as u16;
+        let h = r.height as u16;
+
+        // 1x1: just a corner char (pick top-left)
+        if w == 1 && h == 1 {
+            self.sout.queue(MoveTo(x0, y0))?;
+            self.sout.queue(Print(r.border[0]))?;
+            return Ok(());
+        }
+
+        // repeat horizontal segment count times
+        let horiz_len = w.saturating_sub(2) as usize;
+        let horiz = r.border[1].to_string().repeat(horiz_len);
+
+        // top row
+        self.sout.queue(MoveTo(x0, y0))?;
+        if w == 1 {
+            self.sout.queue(Print(r.border[0]))?;
+        } else {
+            self.sout
+                .queue(Print(r.border[0]))?
+                .queue(Print(&horiz))?
+                .queue(Print(r.border[2]))?;
+        }
+
+        // verticals
+        let mid_rows = h.saturating_sub(2);
+        for dy in 0..mid_rows {
+            let yy = y0 + 1 + dy;
+            self.sout.queue(MoveTo(x0, yy))?.queue(Print(r.border[3]))?;
+            if w > 1 {
+                self.sout
+                    .queue(MoveTo(x0 + w - 1, yy))?
+                    .queue(Print(r.border[3]))?;
             }
         }
+
+        // bottom row
+        if h > 1 {
+            let yb = y0 + h - 1;
+            self.sout.queue(MoveTo(x0, yb))?;
+            if w == 1 {
+                self.sout.queue(Print(r.border[5]))?;
+            } else {
+                self.sout
+                    .queue(Print(r.border[5]))?
+                    .queue(Print(&horiz))?
+                    .queue(Print(r.border[4]))?;
+            }
+        }
+        Ok(())
+    }
+
+    fn main_loop(&mut self) -> io::Result<()> {
+        self.weather_frame()?;
+
+        // weather animation
+        // match self.weather.current_condition {
+        //     CurrentCondition::Rain => {
+        //         if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
+        //             self.anim_frame_counter = 0;
+        //             self.rain_animation()?;
+        //         } else {
+        //             self.anim_frame_counter += 1;
+        //         }
+        //     }
+        //     CurrentCondition::Snow => {
+        //         if self.anim_frame_counter >= SNOW_ANIM_FPS_DIV {
+        //             self.anim_frame_counter = 0;
+        //             self.snow_animation()?;
+        //         } else {
+        //             self.anim_frame_counter += 1;
+        //         }
+        //     }
+        //
+        //     CurrentCondition::Sun => {
+        //         self.sun_animation()?;
+        //     }
+        //
+        //     CurrentCondition::Cloud => {
+        //         self.cloud_animation()?;
+        //     }
+        //
+        //     // add animations for thunder, clear and fog
+        //     _ => {
+        //         if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
+        //             self.anim_frame_counter = 0;
+        //             self.rain_animation()?;
+        //         } else {
+        //             self.anim_frame_counter += 1;
+        //         }
+        //     }
+        // }
         Ok(())
     }
 }
