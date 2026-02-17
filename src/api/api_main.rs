@@ -1,8 +1,7 @@
+use crate::api::request::*;
 use home::home_dir;
 use std::io;
 use std::result::Result::Ok;
-
-use crate::api::request::{WeatherResponse, api_request};
 
 #[derive(PartialEq)]
 pub enum CurrentCondition {
@@ -17,42 +16,26 @@ pub enum CurrentCondition {
 }
 
 pub struct WeatherAPI {
+    pub location: RespLocation,
     pub current_condition: CurrentCondition,
+    pub current_condition_as_str: String,
     pub current_temp_c: f64,
+    pub forecast_days: Vec<RespForecastDay>,
 }
 
-impl WeatherAPI {
-    fn new(current_condition: CurrentCondition, current_temp_c: f64) -> Self {
-        Self {
-            current_condition,
-            current_temp_c,
-        }
-    }
-}
-
-/// parses the current weather description from the API response
-fn parse_current_weather(current: String) -> CurrentCondition {
-    let c: &str = current.as_str().trim();
-    let cl = c.to_lowercase();
-
-    match cl {
-        s if s.contains("sun") => return CurrentCondition::Sun,
-        s if s.contains("cloud") => return CurrentCondition::Cloud,
-        s if s.contains("snow") => return CurrentCondition::Snow,
-        s if s.contains("rain") | s.contains("pour") => return CurrentCondition::Rain,
-        s if s.contains("clear") => return CurrentCondition::Clear,
-        s if s.contains("mist") | s.contains("fog") => return CurrentCondition::Fog,
-        s if s.contains("storm") | s.contains("thunder") => {
-            return CurrentCondition::Thunder;
-        }
-        _ => return CurrentCondition::Unknown,
-    }
-}
-
+/// this is what gets called from main.rs
 pub fn api_main(location: String) -> WeatherAPI {
     let local_key = api_get_local_key();
-    let r: WeatherResponse = api_request(local_key, location).expect("Error");
-    return WeatherAPI::new(parse_current_weather(r.current.condition), r.current.temp_c);
+
+    let r: WeatherResponse = api_request(local_key, location).unwrap();
+
+    return WeatherAPI {
+        location: r.location,
+        current_condition: parse_current_weather(r.current.condition.text.clone()),
+        current_condition_as_str: r.current.condition.text,
+        current_temp_c: r.current.temp_c,
+        forecast_days: r.forecast.forecastday,
+    };
 }
 
 /// helper: api_get_local_key
@@ -80,4 +63,23 @@ fn api_get_local_key() -> String {
         )
         }
     };
+}
+
+/// parses the current weather description from the API response
+fn parse_current_weather(current: String) -> CurrentCondition {
+    let c: &str = current.as_str().trim();
+    let cl = c.to_lowercase();
+
+    match cl {
+        s if s.contains("sun") => return CurrentCondition::Sun,
+        s if s.contains("cloud") => return CurrentCondition::Cloud,
+        s if s.contains("snow") => return CurrentCondition::Snow,
+        s if s.contains("rain") | s.contains("pour") => return CurrentCondition::Rain,
+        s if s.contains("clear") => return CurrentCondition::Clear,
+        s if s.contains("mist") | s.contains("fog") => return CurrentCondition::Fog,
+        s if s.contains("storm") | s.contains("thunder") => {
+            return CurrentCondition::Thunder;
+        }
+        _ => return CurrentCondition::Unknown,
+    }
 }

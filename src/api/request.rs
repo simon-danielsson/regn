@@ -10,34 +10,39 @@ pub struct WeatherResponse {
 }
 
 #[derive(Debug, Deserialize)]
-struct RespLocation {
-    name: String,
-    country: String,
-    localtime: String,
+pub struct RespLocation {
+    pub name: String,
+    pub country: String,
+    pub localtime: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct RespCurrent {
     pub temp_c: f64,
-    pub condition: String,
+    pub condition: RespCondition,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct RespForecast {
-    forecastday: Vec<RespForecastDay>,
+    pub forecastday: Vec<RespForecastDay>,
 }
 
 #[derive(Debug, Deserialize)]
-struct RespForecastDay {
-    date: String,
-    day: RespDay,
+pub struct RespForecastDay {
+    pub date: String,
+    pub day: RespDay,
 }
 
 #[derive(Debug, Deserialize)]
-struct RespDay {
-    maxtemp_c: f64,
-    mintemp_c: f64,
-    condition: String,
+pub struct RespDay {
+    pub maxtemp_c: f64,
+    pub mintemp_c: f64,
+    pub condition: RespCondition,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RespCondition {
+    pub text: String,
 }
 
 #[tokio::main]

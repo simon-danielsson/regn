@@ -1,6 +1,5 @@
 use std::{
     io::{self, Stdout, Write, stdout},
-    thread,
     time::Duration,
 };
 
@@ -28,20 +27,22 @@ fn main() -> io::Result<()> {
     // todo: take args at launch
 
     // fetch weather data from API
-    let weather: WeatherAPI = api::api_main::api_main("Stockholm".to_string());
+    let weather: WeatherAPI = api::api_main::api_main("hong kong".to_string());
 
     let sout = stdout();
     let mut r = Regn::new(sout, weather);
-    r.util_setup()?;
+    r.f_stdout_direct()?;
 
-    while r.prog_state != ProgState::Quit {
-        r.controls()?;
-        r.main_loop()?;
-        r.sout.flush()?;
-        thread::sleep(r.fps);
-    }
-
-    r.util_quit()?;
+    // r.util_setup()?;
+    //
+    // while r.prog_state != ProgState::Quit {
+    //     r.controls()?;
+    //     r.main_loop()?;
+    //     r.sout.flush()?;
+    //     thread::sleep(r.fps);
+    // }
+    //
+    // r.util_quit()?;
 
     Ok(())
 }
@@ -94,6 +95,30 @@ impl Regn {
             // rain_animation
             weather_particles: Vec::new(),
         }
+    }
+
+    fn f_stdout_direct(&mut self) -> io::Result<()> {
+        println!(
+            "City: {}\nCountry: {}\nTime: {}",
+            self.weather.location.name,
+            self.weather.location.country,
+            self.weather.location.localtime
+        );
+
+        println!("Current temp: {}°C", self.weather.current_temp_c);
+        println!("Condition: {}", self.weather.current_condition_as_str);
+
+        println!("\n3-Day Forecast:");
+        for day in self.weather.forecast_days.iter() {
+            println!(
+                "{} → {}°C / {}°C ({})",
+                day.date,
+                day.day.maxtemp_c,
+                day.day.mintemp_c,
+                day.day.condition.text
+            );
+        }
+        Ok(())
     }
 
     fn snow_animation(&mut self) -> io::Result<()> {
