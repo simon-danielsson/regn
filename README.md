@@ -49,8 +49,8 @@ cargo install regn
     
 > [!IMPORTANT]  
 > **WeatherAPI**  
-> Regn queries [WeatherAPI](https://www.weatherapi.com/) to get its weather information. To use this application, you must supply your own API key. Details on how to generate a key can be found on WeatherAPIs developer page linked previously.
-> If/when you have a key, add it to a new file in your home ($HOME) directory: `~/.regn`
+> Regn queries [WeatherAPI](https://www.weatherapi.com/) to fetch its weather data. To use this application, you must supply your own API key. Details on how to generate a key can be found on WeatherAPIs developer page linked previously.  
+> Add your key to a new file in your home ($HOME) directory named ".regn": `~/.regn`  
 
   
 ``` terminal
