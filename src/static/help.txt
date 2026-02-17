@@ -1,0 +1,10 @@
+Subcommands
+help : print help
+
+Flags
+-l <str> : choose city location (default: Stockholm)
+-t : view result directly in stdout instead of a TUI
+
+Controls
+[Esc] : quit
+[Ctrl-C] : quit

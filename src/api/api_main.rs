@@ -24,10 +24,10 @@ pub struct WeatherAPI {
 }
 
 /// this is what gets called from main.rs
-pub fn api_main(location: String) -> WeatherAPI {
+pub fn api_main(location: &String) -> WeatherAPI {
     let local_key = api_get_local_key();
 
-    let r: WeatherResponse = api_request(local_key, location).unwrap();
+    let r: WeatherResponse = api_request(local_key, location.to_string()).unwrap();
 
     return WeatherAPI {
         location: r.location,
@@ -76,7 +76,9 @@ fn parse_current_weather(current: String) -> CurrentCondition {
         s if s.contains("snow") => return CurrentCondition::Snow,
         s if s.contains("rain") | s.contains("pour") => return CurrentCondition::Rain,
         s if s.contains("clear") => return CurrentCondition::Clear,
-        s if s.contains("mist") | s.contains("fog") => return CurrentCondition::Fog,
+        s if s.contains("mist") | s.contains("fog") | s.contains("overcast") => {
+            return CurrentCondition::Fog;
+        }
         s if s.contains("storm") | s.contains("thunder") => {
             return CurrentCondition::Thunder;
         }

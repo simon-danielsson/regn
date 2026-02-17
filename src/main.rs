@@ -1,5 +1,6 @@
 use std::{
     io::{self, Stdout, Write, stdout},
+    thread,
     time::Duration,
 };
 
@@ -11,11 +12,14 @@ use crossterm::{
 use rand::{RngExt, rng};
 
 mod api;
+mod arg;
 mod controls;
+mod help;
 mod utils;
 
 use crate::{
     api::api_main::{CurrentCondition, WeatherAPI},
+    arg::{Arguments, parse_args},
     utils::get_fps,
 };
 
@@ -24,25 +28,37 @@ const RAIN_ANIM_FPS_DIV: i32 = 4;
 const SNOW_ANIM_FPS_DIV: i32 = 13;
 
 fn main() -> io::Result<()> {
-    // todo: take args at launch
+    // get commandline argument launch
+    let args: Arguments = parse_args();
 
     // fetch weather data from API
-    let weather: WeatherAPI = api::api_main::api_main("hong kong".to_string());
+    let weather: WeatherAPI = api::api_main::api_main(&args.location);
 
     let sout = stdout();
-    let mut r = Regn::new(sout, weather);
-    r.f_stdout_direct()?;
+    let mut r = Regn::new(sout, weather, args);
 
-    // r.util_setup()?;
-    //
-    // while r.prog_state != ProgState::Quit {
-    //     r.controls()?;
-    //     r.main_loop()?;
-    //     r.sout.flush()?;
-    //     thread::sleep(r.fps);
-    // }
-    //
-    // r.util_quit()?;
+    // if -t
+    if r.args.no_tui {
+        r.f_stdout_direct()?;
+        return Ok(());
+    }
+
+    // if help
+    if r.args.no_tui {
+        r.print_help();
+        return Ok(());
+    }
+
+    r.util_setup()?;
+
+    while r.prog_state != ProgState::Quit {
+        r.controls()?;
+        r.main_loop()?;
+        r.sout.flush()?;
+        thread::sleep(r.fps);
+    }
+
+    r.util_quit()?;
 
     Ok(())
 }
@@ -68,6 +84,7 @@ struct WeatherParticle {
 enum ProgState {
     Main,
     Quit,
+    Help,
 }
 
 struct Regn {
@@ -77,18 +94,20 @@ struct Regn {
     weather: WeatherAPI,
     prog_state: ProgState,
     fps: Duration,
+    args: Arguments,
     anim_frame_counter: i32,
     // rain_animation
     weather_particles: Vec<WeatherParticle>,
 }
 
 impl Regn {
-    fn new(sout: Stdout, weather: WeatherAPI) -> Self {
+    fn new(sout: Stdout, weather: WeatherAPI, args: Arguments) -> Self {
         Self {
             sout,
             columns: 0,
             rows: 0,
             weather,
+            args,
             prog_state: ProgState::Main,
             fps: get_fps(FPS),
             anim_frame_counter: 0,
