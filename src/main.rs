@@ -44,7 +44,7 @@ fn main() -> io::Result<()> {
     }
 
     // if help
-    if r.args.no_tui {
+    if r.args.help {
         r.print_help();
         return Ok(());
     }
@@ -84,7 +84,6 @@ struct WeatherParticle {
 enum ProgState {
     Main,
     Quit,
-    Help,
 }
 
 struct Regn {
@@ -297,7 +296,14 @@ impl Regn {
             }
 
             // add animations for thunder, clear and fog
-            _ => todo!(),
+            _ => {
+                if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
+                    self.anim_frame_counter = 0;
+                    self.rain_animation()?;
+                } else {
+                    self.anim_frame_counter += 1;
+                }
+            }
         }
         Ok(())
     }

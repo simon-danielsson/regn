@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
-cargo run --release -- -t -l linköping
+cargo run --release -- -t
+# cargo run --release -- help
 

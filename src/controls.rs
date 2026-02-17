@@ -47,7 +47,7 @@ impl Regn {
                     }
                 }
 
-                ProgState::Quit | ProgState::Help => {}
+                ProgState::Quit => {}
             }
         }
         Ok(())
