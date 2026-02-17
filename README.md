@@ -77,4 +77,9 @@ This project is licensed under the [MIT License](https://github.com/simon-daniel
 
 ## 🛠 Dependencies
   
-- [crossterm](https://github.com/crossterm-rs/crossterm)
+- [crossterm](https://github.com/crossterm-rs/crossterm)  
+- [home](https://crates.io/crates/home/0.5.12)  
+- [rand](https://github.com/rust-random/rand)  
+- [serde](https://github.com/serde-rs/serde)  
+- [reqwest](https://github.com/seanmonstar/reqwest)  
+- [tokio](https://github.com/tokio-rs/tokio)  
