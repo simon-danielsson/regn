@@ -49,7 +49,7 @@ cargo install regn
     
 > [!IMPORTANT]  
 > **WeatherAPI**  
-> Regn queries [WeatherAPI](https://www.weatherapi.com/) to fetch its weather data. To use this application, you must supply your own API key. Details on how to generate a key can be found on WeatherAPIs developer page linked previously.  
+> Regn queries [WeatherAPI](https://www.weatherapi.com/) to fetch its weather data. To use this application, you must supply your own API key. Details on how to generate a key can be found on [WeatherAPIs developer page](https://www.weatherapi.com/docs/).  
 > Add your key to a new file in your home ($HOME) directory named ".regn": `~/.regn`  
 
   
