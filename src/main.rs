@@ -117,14 +117,17 @@ impl Regn {
 
     fn f_stdout_direct(&mut self) -> io::Result<()> {
         println!(
-            "City: {}\nCountry: {}\nTime: {}",
-            self.weather.location.name,
-            self.weather.location.country,
-            self.weather.location.localtime
+            "{city}, {country}\n{time}",
+            city = self.weather.location.name,
+            country = self.weather.location.country,
+            time = self.weather.location.localtime
         );
 
-        println!("Current temp: {}°C", self.weather.current_temp_c);
-        println!("Condition: {}", self.weather.current_condition_as_str);
+        println!(
+            "{temp}°C, {cond}",
+            temp = self.weather.current_temp_c,
+            cond = self.weather.current_condition_as_str
+        );
 
         println!("\n{}-Day Forecast:", self.weather.forecast_days.len());
         for day in self.weather.forecast_days.iter() {
