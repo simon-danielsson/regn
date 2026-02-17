@@ -3,7 +3,7 @@ use home::home_dir;
 use std::io;
 use std::result::Result::Ok;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum CurrentCondition {
     Rain,
     Snow,

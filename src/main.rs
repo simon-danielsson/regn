@@ -25,6 +25,7 @@ use crate::{
 
 const FPS: f64 = 60.0;
 const RAIN_ANIM_FPS_DIV: i32 = 4;
+const CLEAR_ANIM_FPS_DIV: i32 = 13;
 const SNOW_ANIM_FPS_DIV: i32 = 13;
 
 fn main() -> io::Result<()> {
@@ -136,7 +137,7 @@ struct Regn {
     fps: Duration,
     args: Arguments,
     anim_frame_counter: i32,
-    // rain and snow vector
+    // rainy, snowy and clear weather
     precipitation: Vec<Precipitation>,
 }
 
@@ -217,6 +218,65 @@ impl Regn {
         // remove out-of-frame particles
         self.precipitation
             .retain(|d| d.pos.col < self.columns && d.pos.row < self.rows);
+
+        Ok(())
+    }
+
+    fn clear_animation(&mut self) -> io::Result<()> {
+        let droplets_to_gen_each_frame: i32 = self.columns as i32 / 7;
+        let max_amt_of_droplets: usize = self.columns as usize / 3;
+
+        let drop_chars: Vec<&str> = vec![",", ".", "*"];
+        let drop_colors: Vec<Color> =
+        vec![Color::DarkGrey, Color::Grey, Color::Reset, Color::White];
+
+        let mut rng = rng();
+
+        // generate droplets
+        if self.precipitation.len() < max_amt_of_droplets {
+            for _ in 0..=droplets_to_gen_each_frame.max(0) {
+                let rand_column = rng.random_range(..self.columns);
+                let rand_color = rng.random_range(..drop_colors.len());
+                let rand_char = rng.random_range(..drop_chars.len());
+                self.precipitation.push(Precipitation {
+                    pos: Pos::new(rand_column, self.rows),
+                    color: drop_colors[rand_color],
+                    char: drop_chars[rand_char].to_string(),
+                });
+            }
+        }
+
+        // movement each frame
+        // let col_mv_each_frame: u16 = 1; // left drift
+        let row_mv_each_frame: u16 = 6; // fly up
+
+        // move + draw
+        for drop in self.precipitation.iter_mut() {
+            // erase old position
+            self.sout.queue(MoveTo(drop.pos.col, drop.pos.row))?;
+            self.sout.write_all(b" ")?;
+
+            // update position
+            let rand_upward_speed = rng.random_range(..50);
+            drop.pos.row = drop.pos.row.saturating_sub(
+                row_mv_each_frame.saturating_sub(rand_upward_speed),
+            );
+            // drop.pos.col = drop.pos.col.saturating_sub(col_mv_each_frame);
+
+            // if visible, draw
+            if drop.pos.col < self.columns && drop.pos.row > 0 {
+                let rand_char = rng.random_range(..drop_chars.len());
+                drop.char = drop_chars[rand_char].to_string();
+                self.sout.queue(SetForegroundColor(drop.color))?;
+                self.sout.queue(MoveTo(drop.pos.col, drop.pos.row))?;
+                self.sout.write_all(drop.char.as_bytes())?;
+            }
+            self.sout.queue(SetForegroundColor(Color::Reset))?;
+        }
+
+        // remove out-of-frame particles
+        self.precipitation
+            .retain(|d| d.pos.col < self.columns && d.pos.row > 0);
 
         Ok(())
     }
@@ -412,45 +472,54 @@ impl Regn {
     }
 
     fn main_loop(&mut self) -> io::Result<()> {
+        // weather animation
+        match self.weather.current_condition {
+            CurrentCondition::Rain => {
+                if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
+                    self.anim_frame_counter = 0;
+                    self.rain_animation()?;
+                } else {
+                    self.anim_frame_counter += 1;
+                }
+            }
+            CurrentCondition::Snow => {
+                if self.anim_frame_counter >= SNOW_ANIM_FPS_DIV {
+                    self.anim_frame_counter = 0;
+                    self.snow_animation()?;
+                } else {
+                    self.anim_frame_counter += 1;
+                }
+            }
+
+            CurrentCondition::Clear => {
+                if self.anim_frame_counter >= CLEAR_ANIM_FPS_DIV {
+                    self.anim_frame_counter = 0;
+                    self.clear_animation()?;
+                } else {
+                    self.anim_frame_counter += 1;
+                }
+            }
+
+            CurrentCondition::Sun => {
+                self.sun_animation()?;
+            }
+
+            CurrentCondition::Cloud => {
+                self.cloud_animation()?;
+            }
+
+            // add animations for thunder, clear and fog
+            _ => {
+                if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
+                    self.anim_frame_counter = 0;
+                    self.rain_animation()?;
+                } else {
+                    self.anim_frame_counter += 1;
+                }
+            }
+        }
         self.weather_frame()?;
 
-        // weather animation
-        // match self.weather.current_condition {
-        //     CurrentCondition::Rain => {
-        //         if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
-        //             self.anim_frame_counter = 0;
-        //             self.rain_animation()?;
-        //         } else {
-        //             self.anim_frame_counter += 1;
-        //         }
-        //     }
-        //     CurrentCondition::Snow => {
-        //         if self.anim_frame_counter >= SNOW_ANIM_FPS_DIV {
-        //             self.anim_frame_counter = 0;
-        //             self.snow_animation()?;
-        //         } else {
-        //             self.anim_frame_counter += 1;
-        //         }
-        //     }
-        //
-        //     CurrentCondition::Sun => {
-        //         self.sun_animation()?;
-        //     }
-        //
-        //     CurrentCondition::Cloud => {
-        //         self.cloud_animation()?;
-        //     }
-        //
-        //     // add animations for thunder, clear and fog
-        //     _ => {
-        //         if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
-        //             self.anim_frame_counter = 0;
-        //             self.rain_animation()?;
-        //         } else {
-        //             self.anim_frame_counter += 1;
-        //         }
-        //     }
-        // }
         Ok(())
     }
 }

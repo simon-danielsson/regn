@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{CurrentCondition, ProgState, Regn};
+use crate::{ProgState, Regn};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers, poll};
 
 impl Regn {
@@ -16,22 +16,6 @@ impl Regn {
                             // quit
                             (KeyCode::Esc, _) => {
                                 self.prog_state = ProgState::Quit;
-                            }
-
-                            (KeyCode::Char('t'), _) => {
-                                if self.weather.current_condition
-                                == CurrentCondition::Rain
-                                {
-                                    self.precipitation.clear();
-                                    self.util_clear_screen()?;
-                                    self.weather
-                                        .current_condition = CurrentCondition::Snow;
-                                } else {
-                                    self.precipitation.clear();
-                                    self.util_clear_screen()?;
-                                    self.weather
-                                        .current_condition = CurrentCondition::Rain;
-                                }
                             }
 
                             (
