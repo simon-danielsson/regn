@@ -16,7 +16,7 @@ mod controls;
 mod utils;
 
 use crate::{
-    api::{API, CurrentWeather},
+    api::api_main::{CurrentCondition, WeatherAPI},
     utils::get_fps,
 };
 
@@ -25,7 +25,10 @@ const RAIN_ANIM_FPS_DIV: i32 = 4;
 const SNOW_ANIM_FPS_DIV: i32 = 13;
 
 fn main() -> io::Result<()> {
-    let weather = api::api_main("Stockholm".to_string());
+    // todo: take args at launch
+
+    // fetch weather data from API
+    let weather: WeatherAPI = api::api_main::api_main("Stockholm".to_string());
 
     let sout = stdout();
     let mut r = Regn::new(sout, weather);
@@ -70,7 +73,7 @@ struct Regn {
     columns: u16,
     rows: u16,
     sout: Stdout,
-    weather: API,
+    weather: WeatherAPI,
     prog_state: ProgState,
     fps: Duration,
     anim_frame_counter: i32,
@@ -79,7 +82,7 @@ struct Regn {
 }
 
 impl Regn {
-    fn new(sout: Stdout, weather: API) -> Self {
+    fn new(sout: Stdout, weather: WeatherAPI) -> Self {
         Self {
             sout,
             columns: 0,
@@ -222,8 +225,8 @@ impl Regn {
 
     fn main_loop(&mut self) -> io::Result<()> {
         // weather animation
-        match self.weather.current {
-            CurrentWeather::Rain => {
+        match self.weather.current_condition {
+            CurrentCondition::Rain => {
                 if self.anim_frame_counter >= RAIN_ANIM_FPS_DIV {
                     self.anim_frame_counter = 0;
                     self.rain_animation()?;
@@ -232,7 +235,7 @@ impl Regn {
                 }
             }
 
-            CurrentWeather::Snow => {
+            CurrentCondition::Snow => {
                 if self.anim_frame_counter >= SNOW_ANIM_FPS_DIV {
                     self.anim_frame_counter = 0;
                     self.snow_animation()?;
@@ -241,11 +244,11 @@ impl Regn {
                 }
             }
 
-            CurrentWeather::Sun => {
+            CurrentCondition::Sun => {
                 self.sun_animation()?;
             }
 
-            CurrentWeather::Cloud => {
+            CurrentCondition::Cloud => {
                 self.cloud_animation()?;
             }
 

@@ -1007,7 +1007,6 @@ dependencies = [
 name = "regn"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "crossterm",
  "home",
  "rand 0.10.0",
