@@ -27,7 +27,9 @@ pub struct WeatherAPI {
 pub fn api_main(location: &String, forecast: &i32) -> WeatherAPI {
     let local_key = api_get_local_key();
 
-    let r: WeatherResponse = api_request(local_key, location.to_string(), forecast).unwrap();
+    let r = api_request(local_key, location.to_string(), forecast)
+        .map_err(|_| "Failed to query WeatherAPI. Please check that your API key is valid.")
+        .unwrap();
 
     return WeatherAPI {
         location: r.location,
